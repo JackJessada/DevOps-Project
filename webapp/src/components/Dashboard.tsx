@@ -1,35 +1,54 @@
 "use client"
 
 import { signOut, useSession } from "next-auth/react"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
+import Image from "next/image"
+
+interface Email {
+  from: string;
+  subject: string;
+  receivedAt: string;
+}
 
 export default function Dashboard() {
   const { data: session } = useSession()
   const [loading, setLoading] = useState(false)
   const [syncMessage, setSyncMessage] = useState("")
-  const [emails, setEmails] = useState<any[]>([])
+  const [emails, setEmails] = useState<Email[]>([])
   
   // Chat & Report state
   const [chatInput, setChatInput] = useState("")
   const [chatLoading, setChatLoading] = useState(false)
   const [chatHistory, setChatHistory] = useState<{ role: "user" | "ai"; text: string }[]>([])
-  const [dailyReport, setDailyReport] = useState("")
 
   // Fetch emails from our DB to show in the list
-  const loadEmails = async () => {
+  const loadEmails = useCallback(async () => {
     try {
       const res = await fetch("/api/emails")
       if (res.ok) {
         const data = await res.json()
         setEmails(data.emails)
       }
-    } catch (error) {
+    } catch {
       console.error("Failed to load emails")
     }
-  }
+  }, [])
 
   useEffect(() => {
-    if (session) loadEmails()
+    if (session) {
+      const initEmails = async () => {
+        try {
+          const res = await fetch("/api/emails")
+          if (res.ok) {
+            const data = await res.json()
+            setEmails(data.emails)
+          }
+        } catch {
+          console.error("Failed to load emails")
+        }
+      }
+      initEmails()
+    }
   }, [session])
 
   const handleFetchEmails = async () => {
@@ -44,7 +63,7 @@ export default function Dashboard() {
       } else {
         setSyncMessage(`Error: ${data.error}`)
       }
-    } catch (error) {
+    } catch {
       setSyncMessage("Error occurred during sync.")
     } finally {
       setLoading(false)
@@ -57,10 +76,9 @@ export default function Dashboard() {
       const res = await fetch("/api/emails/report")
       const data = await res.json()
       if (res.ok) {
-        setDailyReport(data.report)
         setChatHistory(prev => [...prev, { role: "ai", text: `📊 **Daily Job Update:**\n\n${data.report}` }])
       }
-    } catch (error) {
+    } catch {
       setChatHistory(prev => [...prev, { role: "ai", text: "Failed to generate daily report." }])
     } finally {
       setChatLoading(false)
@@ -88,7 +106,7 @@ export default function Dashboard() {
       } else {
         setChatHistory(prev => [...prev, { role: "ai", text: `Error: ${data.error}` }])
       }
-    } catch (error) {
+    } catch {
       setChatHistory(prev => [...prev, { role: "ai", text: "Sorry, I couldn't process that request." }])
     } finally {
       setChatLoading(false)
@@ -114,7 +132,13 @@ export default function Dashboard() {
         <div className="lg:col-span-3 flex flex-col gap-4">
           <div className="bg-blue-50 p-5 rounded-lg border border-blue-100">
             <div className="flex items-center gap-3 mb-4">
-              <img src={session.user?.image || ""} className="w-10 h-10 rounded-full" />
+              <Image 
+                src={session.user?.image || "/next.svg"} 
+                alt="User Profile" 
+                width={40} 
+                height={40} 
+                className="rounded-full" 
+              />
               <p className="font-bold text-sm text-gray-800">{session.user?.name}</p>
             </div>
             <button onClick={handleFetchEmails} disabled={loading} className="w-full bg-blue-600 text-white py-2 rounded font-bold text-sm mb-2 disabled:bg-gray-400">
@@ -150,7 +174,7 @@ export default function Dashboard() {
           
           <div className="flex-1 overflow-y-auto p-5 flex flex-col gap-4 bg-gray-50">
             {chatHistory.length === 0 && (
-              <div className="text-center py-10 opacity-40 italic text-sm">Ask about your applications or click "Daily Update Report"</div>
+              <div className="text-center py-10 opacity-40 italic text-sm">Ask about your applications or click &quot;Daily Update Report&quot;</div>
             )}
             {chatHistory.map((chat, i) => (
               <div key={i} className={`flex ${chat.role === "user" ? "justify-end" : "justify-start"}`}>
