@@ -8,14 +8,18 @@ NEXTAUTH_SECRET="sdsd" # Replace with a strong secret
 # Obtain these from https://console.cloud.google.com/
 GOOGLE_CLIENT_ID="YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com"
 GOOGLE_CLIENT_SECRET="YOUR_GOOGLE_CLIENT_SECRET"
+# AI Configuration
+# Options: openai, anthropic, gemini, deepseek
+AI_PROVIDER="deepseek"
+
 # Gemini AI Configuration
-# Obtain this from https://aistudio.google.com/
 GEMINI_API_KEY="YOUR_GEMINI_API_KEY"
 
 # OpenAI Configuration
-# Obtain this from https://platform.openai.com/
 OPENAI_API_KEY="sk-..."
 
+# Anthropic Configuration
+ANTHROPIC_API_KEY="sk-ant-..."
+
 # DeepSeek Configuration
-# Obtain this from https://platform.deepseek.com/
 DEEPSEEK_API_KEY="sk-..."

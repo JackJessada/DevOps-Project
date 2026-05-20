@@ -23,46 +23,102 @@ export async function fetchAndStoreEmails(userId: string) {
 
   const gmail = google.gmail({ version: "v1", auth })
 
-  // 2. Search for ALL emails (no filter)
+  // 2. Search for recent emails
   const res = await gmail.users.messages.list({
     userId: "me",
-    maxResults: 500, // Increased to fetch more emails
+    maxResults: 200, // Reduced from 500 to keep it snappy, but still substantial
   })
 
   const messages = res.data.messages || []
+  if (messages.length === 0) return 0
 
-  for (const message of messages) {
-    const msg = await gmail.users.messages.get({
-      userId: "me",
-      id: message.id!,
-    })
+  // 3. Get existing message IDs from DB to avoid re-fetching details
+  const existingEmails = await prisma.jobEmail.findMany({
+    where: { 
+      userId,
+      messageId: { in: messages.map(m => m.id!) }
+    },
+    select: { messageId: true }
+  })
+  
+  const existingIds = new Set(existingEmails.map(e => e.messageId))
+  const newMessages = messages.filter(m => !existingIds.has(m.id!))
 
-    const headers = msg.data.payload?.headers
-    const from = headers?.find((h) => h.name === "From")?.value || "Unknown"
-    const subject = headers?.find((h) => h.name === "Subject")?.value || "No Subject"
-    const snippet = msg.data.snippet || ""
-    const receivedAt = new Date(parseInt(msg.data.internalDate!))
+  if (newMessages.length === 0) return 0
 
-    // 3. Store in database
-    await prisma.jobEmail.upsert({
-      where: { messageId: message.id! },
-      update: {
-        userId,
-        from,
-        subject,
-        snippet,
-        receivedAt,
-      },
-      create: {
-        userId,
-        messageId: message.id!,
-        from,
-        subject,
-        snippet,
-        receivedAt,
-      },
-    })
+  // 4. Fetch details in parallel with a concurrency limit
+  const batchSize = 15 // Process 15 emails at a time
+  let processedCount = 0
+
+  for (let i = 0; i < newMessages.length; i += batchSize) {
+    const batch = newMessages.slice(i, i + batchSize)
+    
+    await Promise.all(batch.map(async (message) => {
+      try {
+        const msg = await gmail.users.messages.get({
+          userId: "me",
+          id: message.id!,
+        })
+
+        const headers = msg.data.payload?.headers
+        const from = headers?.find((h) => h.name === "From")?.value || "Unknown"
+        const subject = headers?.find((h) => h.name === "Subject")?.value || "No Subject"
+        const snippet = msg.data.snippet || ""
+        const receivedAt = new Date(parseInt(msg.data.internalDate!))
+
+        interface GmailPart {
+          mimeType?: string | null;
+          body?: { data?: string | null } | null;
+          parts?: GmailPart[] | null;
+        }
+
+        // Recursive helper to extract body parts
+        const extractBodyParts = (parts: GmailPart[]): { html: string; plain: string } => {
+          let html = "";
+          let plain = "";
+          
+          for (const part of parts) {
+            if (part.mimeType === "text/html" && part.body?.data) {
+              html += Buffer.from(part.body.data, "base64url").toString("utf-8");
+            } else if (part.mimeType === "text/plain" && part.body?.data) {
+              plain += Buffer.from(part.body.data, "base64url").toString("utf-8");
+            } else if (part.parts) {
+              const nested = extractBodyParts(part.parts);
+              html += nested.html;
+              plain += nested.plain;
+            }
+          }
+          return { html, plain };
+        };
+
+        let body = "";
+        const payload = msg.data.payload;
+        
+        if (payload?.parts) {
+          const { html, plain } = extractBodyParts(payload.parts);
+          body = html || plain;
+        } else if (payload?.body?.data) {
+          body = Buffer.from(payload.body.data, "base64url").toString("utf-8");
+        }
+
+        // Store in database
+        await prisma.jobEmail.create({
+          data: {
+            userId,
+            messageId: message.id!,
+            from,
+            subject,
+            snippet,
+            body,
+            receivedAt,
+          },
+        })
+        processedCount++
+      } catch (error) {
+        console.error(`Failed to sync message ${message.id}:`, error)
+      }
+    }))
   }
 
-  return messages.length
+  return processedCount
 }

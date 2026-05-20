@@ -31,10 +31,12 @@ services:
       - DATABASE_URL=postgresql://postgres:postgres@db:5432/jobtracker
       - NEXTAUTH_URL=http://localhost:3000
       - NEXTAUTH_SECRET=y8p9xR2mK6qL5vW1nJ4bT7zS3hG9fD0c
+      - AI_PROVIDER=${AI_PROVIDER}
       - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
       - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
       - GEMINI_API_KEY=${GEMINI_API_KEY}
       - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
       - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY}
     depends_on:
       - db

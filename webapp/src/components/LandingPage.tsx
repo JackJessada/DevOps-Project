@@ -60,7 +60,7 @@ const LandingPage = () => {
               </svg>
               Sign in with Google
             </button>
-            <div className="flex -space-x-2">
+            {/* <div className="flex -space-x-2">
               {[1, 2, 3, 4].map((i) => (
                 <div key={i} className="w-10 h-10 rounded-full border-2 border-white bg-slate-200 flex items-center justify-center text-[10px] font-bold text-slate-400">
                   U{i}
@@ -69,7 +69,7 @@ const LandingPage = () => {
               <div className="pl-4 text-sm text-slate-500 font-medium self-center">
                 Joined by 500+ job hunters
               </div>
-            </div>
+            </div> */}
           </div>
         </div>
       </section>
@@ -94,12 +94,12 @@ const LandingPage = () => {
             <div className="p-6 lg:p-10 space-y-6">
               <div className="flex justify-end">
                 <div className="max-w-[80%] bg-indigo-600 text-white p-4 rounded-2xl rounded-tr-none shadow-sm">
-                  What's the status of my application at Google?
+                  What&apos;s the status of my application at Google?
                 </div>
               </div>
               <div className="flex justify-start">
                 <div className="max-w-[80%] bg-slate-100 text-slate-800 p-4 rounded-2xl rounded-tl-none border border-slate-200">
-                  You received an email from Google Recruiting 2 days ago. They've invited you for a technical phone screen. Would you like me to find some available times in your calendar?
+                  You received an email from Google Recruiting 2 days ago. They&apos;ve invited you for a technical phone screen. Would you like me to find some available times in your calendar?
                 </div>
               </div>
               <div className="flex justify-end">
@@ -123,12 +123,12 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* "The Future" Section */}
+      {/* "The Future" Section
       <section className="py-24">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-4xl font-bold text-slate-900 mb-4">The Future: Career Mastery</h2>
-            <p className="text-lg text-slate-600">We're building the ultimate command center for your professional growth.</p>
+            <p className="text-lg text-slate-600">We&apos;re building the ultimate command center for your professional growth.</p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
@@ -184,7 +184,7 @@ const LandingPage = () => {
             />
           </div>
         </div>
-      </section>
+      </section> */}
 
       {/* Footer */}
       <footer className="py-12 bg-slate-50 border-t border-slate-100">

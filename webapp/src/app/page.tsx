@@ -1,6 +1,6 @@
 "use client"
 
-import { signIn, useSession } from "next-auth/react"
+import { useSession } from "next-auth/react"
 import Dashboard from "@/components/Dashboard"
 import LandingPage from "@/components/LandingPage"
 
