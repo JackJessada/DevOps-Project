@@ -372,27 +372,27 @@ export default function JobTracker({ lang }: JobTrackerProps) {
             <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-8 space-y-5">
               <div className="space-y-1.5">
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider">{t.company}</label>
-                <input required type="text" value={formData.company} onChange={e => setFormData({...formData, company: e.target.value})} className="w-full bg-slate-50 border-2 border-transparent focus:border-indigo-100 focus:bg-white rounded-xl px-4 py-3 text-sm font-bold focus:outline-none transition-all" />
+                <input required type="text" value={formData.company} onChange={e => setFormData({...formData, company: e.target.value})} className="w-full bg-slate-50 border-2 border-transparent focus:border-indigo-100 focus:bg-white rounded-xl px-4 py-3 text-sm font-bold focus:outline-none transition-all text-slate-900" />
               </div>
               <div className="space-y-1.5">
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider">{t.position}</label>
-                <input required type="text" value={formData.position} onChange={e => setFormData({...formData, position: e.target.value})} className="w-full bg-slate-50 border-2 border-transparent focus:border-indigo-100 focus:bg-white rounded-xl px-4 py-3 text-sm font-bold focus:outline-none transition-all" />
+                <input required type="text" value={formData.position} onChange={e => setFormData({...formData, position: e.target.value})} className="w-full bg-slate-50 border-2 border-transparent focus:border-indigo-100 focus:bg-white rounded-xl px-4 py-3 text-sm font-bold focus:outline-none transition-all text-slate-900" />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1.5">
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider">{t.status}</label>
-                  <select value={formData.status} onChange={e => setFormData({...formData, status: e.target.value})} className="w-full bg-slate-50 border-2 border-transparent focus:border-indigo-100 focus:bg-white rounded-xl px-4 py-3 text-sm font-bold focus:outline-none transition-all">
+                  <select value={formData.status} onChange={e => setFormData({...formData, status: e.target.value})} className="w-full bg-slate-50 border-2 border-transparent focus:border-indigo-100 focus:bg-white rounded-xl px-4 py-3 text-sm font-bold focus:outline-none transition-all text-slate-900">
                     {statusOptions.map(opt => <option key={opt} value={opt}>{opt}</option>)}
                   </select>
                 </div>
                 <div className="space-y-1.5">
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider">{t.interviewDate}</label>
-                  <input type="date" value={formData.interviewDate} onChange={e => setFormData({...formData, interviewDate: e.target.value})} className="w-full bg-slate-50 border-2 border-transparent focus:border-indigo-100 focus:bg-white rounded-xl px-4 py-3 text-sm font-bold focus:outline-none transition-all" />
+                  <input type="date" value={formData.interviewDate} onChange={e => setFormData({...formData, interviewDate: e.target.value})} className="w-full bg-slate-50 border-2 border-transparent focus:border-indigo-100 focus:bg-white rounded-xl px-4 py-3 text-sm font-bold focus:outline-none transition-all text-slate-900" />
                 </div>
               </div>
               <div className="space-y-1.5">
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider">{t.notes}</label>
-                <textarea rows={3} value={formData.notes} onChange={e => setFormData({...formData, notes: e.target.value})} className="w-full bg-slate-50 border-2 border-transparent focus:border-indigo-100 focus:bg-white rounded-xl px-4 py-3 text-sm font-bold focus:outline-none transition-all" />
+                <textarea rows={3} value={formData.notes} onChange={e => setFormData({...formData, notes: e.target.value})} className="w-full bg-slate-50 border-2 border-transparent focus:border-indigo-100 focus:bg-white rounded-xl px-4 py-3 text-sm font-bold focus:outline-none transition-all text-slate-900" />
               </div>
 
               <div className="pt-4 flex gap-3">
