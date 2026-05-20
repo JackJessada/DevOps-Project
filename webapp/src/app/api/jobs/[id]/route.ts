@@ -36,7 +36,7 @@ export async function PATCH(
 
 export async function DELETE(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await getServerSession(authOptions)
 
@@ -45,7 +45,7 @@ export async function DELETE(
   }
 
   try {
-    const id = (await params).id;
+    const { id } = await params;
     await prisma.jobApplication.delete({
       where: { id, userId: session.user.id },
     })
