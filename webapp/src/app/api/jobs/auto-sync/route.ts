@@ -12,7 +12,14 @@ export async function POST(request: Request) {
   }
 
   try {
-    let days = 2;
+    let days = 30; // Default to 30 days for better coverage
+    
+    // Check if user has any job applications. If not, this is first sync.
+    const jobCount = await prisma.jobApplication.count({ where: { userId: session.user.id } });
+    if (jobCount === 0) {
+      days = 180; // Analysis range for first sync (6 months)
+    }
+
     try {
       const body: { days?: string } = await request.json();
       if (body.days) days = parseInt(body.days);
@@ -38,11 +45,11 @@ export async function POST(request: Request) {
     }
 
     // 2. Pre-filter with Regex (Thai + English)
-    const jobKeywordsRegex = /application|interview|hiring|recruitment|offer|position|career|status|schedule|สมัครงาน|สัมภาษณ์|รับสมัคร|ตำแหน่ง|ผลการสมัคร|นัดหมาย|ตอบรับ/i;
+    const jobKeywordsRegex = /application|interview|hiring|recruitment|offer|position|career|status|schedule|resume|candidate|onboarding|สมัครงาน|สัมภาษณ์|รับสมัคร|ตำแหน่ง|ผลการสมัคร|นัดหมาย|ตอบรับ|ประวัติการทำงาน/i;
     
     const filteredEmails = allEmails.filter(e => 
       jobKeywordsRegex.test(e.subject) || jobKeywordsRegex.test(e.snippet)
-    ).slice(0, 40); // Limit to top 40 relevant emails for AI context
+    ).slice(0, 100); // Increased to 100 for better coverage during initial large sync
 
     if (filteredEmails.length === 0) {
       return NextResponse.json({ message: "No job-related emails found after filtering", count: 0 })

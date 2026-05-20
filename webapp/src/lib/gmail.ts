@@ -23,22 +23,31 @@ export async function fetchAndStoreEmails(userId: string, days: number = 7) {
 
   const gmail = google.gmail({ version: "v1", auth })
 
+  // Check if user has any emails in DB. If not, sync 6 months.
+  const emailCount = await prisma.jobEmail.count({ where: { userId } });
+  let syncDays = days;
+  let maxResults = 300;
+
+  if (emailCount === 0) {
+    syncDays = 180; // ~6 months
+    maxResults = 500; // Increased for initial sync
+  }
+
   // 2. Build search query with job keywords (English + Thai)
-  // Logic: (application OR interview OR job OR status OR ...) AND after:YYYY/MM/DD
   const afterDate = new Date();
-  afterDate.setDate(afterDate.getDate() - days);
+  afterDate.setDate(afterDate.getDate() - syncDays);
   const afterStr = `${afterDate.getFullYear()}/${afterDate.getMonth() + 1}/${afterDate.getDate()}`;
   
   const keywords = [
-    "application", "interview", "hiring", "recruitment", "offer", "position", "career",
-    "สมัครงาน", "สัมภาษณ์", "รับสมัคร", "ตำแหน่ง", "ผลการสมัคร", "นัดหมาย"
+    "application", "interview", "hiring", "recruitment", "offer", "position", "career", "resume", "candidate", "onboarding",
+    "สมัครงาน", "สัมภาษณ์", "รับสมัคร", "ตำแหน่ง", "ผลการสมัคร", "นัดหมาย", "ตอบรับ", "ประวัติการทำงาน"
   ];
   const query = `(${keywords.join(" OR ")}) after:${afterStr}`;
 
   const res = await gmail.users.messages.list({
     userId: "me",
     q: query,
-    maxResults: 300,
+    maxResults,
   })
 
   const messages = res.data.messages || []
