@@ -12,30 +12,48 @@ export async function POST(request: Request) {
   }
 
   try {
-    // 1. Fetch recent emails from the last 2 days
-    const twoDaysAgo = new Date()
-    twoDaysAgo.setDate(twoDaysAgo.getDate() - 1)
-    twoDaysAgo.setHours(0, 0, 0, 0)
+    let days = 2;
+    try {
+      const body: { days?: string } = await request.json();
+      if (body.days) days = parseInt(body.days);
+    } catch {
+      // ignore
+    }
 
-    const emails = await prisma.jobEmail.findMany({
+    // 1. Fetch recent emails from the specified range
+    const searchRange = new Date()
+    searchRange.setDate(searchRange.getDate() - days)
+    searchRange.setHours(0, 0, 0, 0)
+
+    const allEmails = await prisma.jobEmail.findMany({
       where: { 
         userId: session.user.id,
-        receivedAt: { gte: twoDaysAgo }
+        receivedAt: { gte: searchRange }
       },
       orderBy: { receivedAt: "desc" },
-      take: 50, // Increased to catch more emails over 2 days
     })
 
-    if (emails.length === 0) {
+    if (allEmails.length === 0) {
       return NextResponse.json({ message: "No emails to analyze", count: 0 })
     }
 
-    // 2. Fetch current tracking list
+    // 2. Pre-filter with Regex (Thai + English)
+    const jobKeywordsRegex = /application|interview|hiring|recruitment|offer|position|career|status|schedule|สมัครงาน|สัมภาษณ์|รับสมัคร|ตำแหน่ง|ผลการสมัคร|นัดหมาย|ตอบรับ/i;
+    
+    const filteredEmails = allEmails.filter(e => 
+      jobKeywordsRegex.test(e.subject) || jobKeywordsRegex.test(e.snippet)
+    ).slice(0, 40); // Limit to top 40 relevant emails for AI context
+
+    if (filteredEmails.length === 0) {
+      return NextResponse.json({ message: "No job-related emails found after filtering", count: 0 })
+    }
+
+    // 3. Fetch current tracking list
     const currentJobs = await prisma.jobApplication.findMany({
       where: { userId: session.user.id },
     })
 
-    const emailContext = emails.map(e => `From: ${e.from}\nSubject: ${e.subject}\nSnippet: ${e.snippet}\nDate: ${e.receivedAt}`).join("\n---\n")
+    const emailContext = filteredEmails.map(e => `From: ${e.from}\nSubject: ${e.subject}\nSnippet: ${e.snippet}\nDate: ${e.receivedAt}`).join("\n---\n")
     const jobsContext = currentJobs.map(j => `- ${j.company} (${j.position}): ${j.status}`).join("\n")
 
     const now = new Date();
@@ -81,31 +99,70 @@ export async function POST(request: Request) {
       return NextResponse.json({ message: "AI did not return valid updates", raw: response })
     }
 
-    const updates = JSON.parse(jsonMatch[0])
+    const rawUpdates = JSON.parse(jsonMatch[0])
+    
+    interface JobUpdate {
+      company: string;
+      position: string;
+      status: "Pending" | "Interviewing" | "Offer" | "Rejected";
+      interviewDate: string | null;
+      notes: string;
+    }
+
+    // 4. Consolidate updates by company to prevent duplicate instances in the same batch
+    const consolidatedUpdates: Record<string, JobUpdate> = {};
+    for (const update of rawUpdates as JobUpdate[]) {
+      const key = update.company.toLowerCase().trim();
+      if (!consolidatedUpdates[key]) {
+        consolidatedUpdates[key] = update;
+      } else {
+        // Merge: keep latest status, merge unique notes
+        consolidatedUpdates[key].status = update.status; // Assume later in list is newer
+        if (update.interviewDate) consolidatedUpdates[key].interviewDate = update.interviewDate;
+        if (update.notes && !consolidatedUpdates[key].notes.includes(update.notes)) {
+          consolidatedUpdates[key].notes += ` | ${update.notes}`;
+        }
+      }
+    }
+
+    const updates = Object.values(consolidatedUpdates);
     let createdCount = 0
     let updatedCount = 0
 
     for (const update of updates) {
-      // Find existing job by company (rough match)
-      const existing = currentJobs.find(j => 
-        j.company.toLowerCase().includes(update.company.toLowerCase()) || 
-        update.company.toLowerCase().includes(j.company.toLowerCase())
-      )
+      // Find existing job by company (prioritize exact match, then loose)
+      let existing = currentJobs.find(j => j.company.toLowerCase().trim() === update.company.toLowerCase().trim());
+      
+      if (!existing) {
+        existing = currentJobs.find(j => 
+          j.company.toLowerCase().includes(update.company.toLowerCase()) || 
+          update.company.toLowerCase().includes(j.company.toLowerCase())
+        )
+      }
 
       if (existing) {
-        // Update if status changed or new interview date
-        await prisma.jobApplication.update({
-          where: { id: existing.id },
-          data: {
-            status: update.status,
-            interviewDate: update.interviewDate ? new Date(update.interviewDate) : existing.interviewDate,
-            notes: update.notes ? `${existing.notes || ""}\n[AI Update ${dateStr}]: ${update.notes}`.trim() : existing.notes
-          }
-        })
-        updatedCount++
+        // Check for meaningful changes to avoid duplicates
+        const isNewNote = update.notes && !existing.notes?.includes(update.notes);
+        const statusChanged = existing.status !== update.status;
+        const newInterviewDate = update.interviewDate ? new Date(update.interviewDate) : null;
+        const dateChanged = newInterviewDate && existing.interviewDate?.getTime() !== newInterviewDate.getTime();
+
+        if (statusChanged || dateChanged || isNewNote) {
+          await prisma.jobApplication.update({
+            where: { id: existing.id },
+            data: {
+              status: update.status,
+              interviewDate: newInterviewDate || existing.interviewDate,
+              notes: isNewNote 
+                ? `${existing.notes || ""}\n[AI Update ${dateStr}]: ${update.notes}`.trim() 
+                : existing.notes
+            }
+          })
+          updatedCount++
+        }
       } else {
         // Create new
-        await prisma.jobApplication.create({
+        const newJob = await prisma.jobApplication.create({
           data: {
             userId: session.user.id,
             company: update.company,
@@ -115,6 +172,8 @@ export async function POST(request: Request) {
             notes: update.notes
           }
         })
+        // Add to local list to prevent duplicate creation if AI returns it again (though consolidated now)
+        currentJobs.push(newJob);
         createdCount++
       }
     }

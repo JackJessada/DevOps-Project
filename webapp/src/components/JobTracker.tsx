@@ -108,7 +108,12 @@ export default function JobTracker({ lang }: JobTrackerProps) {
   }, [])
 
   useEffect(() => {
-    if (session) fetchJobs()
+    const initFetch = async () => {
+      if (session) {
+        await fetchJobs();
+      }
+    };
+    initFetch();
   }, [session, fetchJobs])
 
   const handleAutoSync = async () => {

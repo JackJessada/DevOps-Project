@@ -1,0 +1,53 @@
+name: Continuous Integration
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [20.x]
+
+    env:
+      DATABASE_URL: postgresql://dummy:password@localhost:5432/dummy
+      NEXTAUTH_SECRET: dummy-secret
+      GOOGLE_CLIENT_ID: dummy-id
+      GOOGLE_CLIENT_SECRET: dummy-secret
+      AI_PROVIDER: openai
+      OPENAI_API_KEY: dummy-key
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+          cache-dependency-path: webapp/package-lock.json
+
+      - name: Install dependencies
+        run: |
+          cd webapp
+          npm ci
+
+      - name: Generate Prisma Client
+        run: |
+          cd webapp
+          npx prisma generate
+
+      - name: Run Lint
+        run: |
+          cd webapp
+          npm run lint
+
+      - name: Build Application
+        run: |
+          cd webapp
+          npm run build

@@ -3,7 +3,7 @@ import { NextResponse } from "next/server"
 import { authOptions } from "@/lib/auth"
 import { fetchAndStoreEmails } from "@/lib/gmail"
 
-export async function POST() {
+export async function POST(req: Request) {
   const session = await getServerSession(authOptions)
 
   if (!session || !session.user) {
@@ -11,7 +11,15 @@ export async function POST() {
   }
 
   try {
-    const count = await fetchAndStoreEmails(session.user.id)
+    let days = 7;
+    try {
+      const body = await req.json();
+      if (body.days) days = parseInt(body.days);
+    } catch {
+      // ignore
+    }
+
+    const count = await fetchAndStoreEmails(session.user.id, days)
     return NextResponse.json({ success: true, count })
   } catch (error: unknown) {
     console.error("Failed to sync emails:", error)

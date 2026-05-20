@@ -1,7 +1,7 @@
 import { google } from "googleapis"
 import { prisma } from "@/lib/prisma"
 
-export async function fetchAndStoreEmails(userId: string) {
+export async function fetchAndStoreEmails(userId: string, days: number = 7) {
   // 1. Get the account for this user to get the access token
   const account = await prisma.account.findFirst({
     where: { userId, provider: "google" },
@@ -23,10 +23,22 @@ export async function fetchAndStoreEmails(userId: string) {
 
   const gmail = google.gmail({ version: "v1", auth })
 
-  // 2. Search for recent emails
+  // 2. Build search query with job keywords (English + Thai)
+  // Logic: (application OR interview OR job OR status OR ...) AND after:YYYY/MM/DD
+  const afterDate = new Date();
+  afterDate.setDate(afterDate.getDate() - days);
+  const afterStr = `${afterDate.getFullYear()}/${afterDate.getMonth() + 1}/${afterDate.getDate()}`;
+  
+  const keywords = [
+    "application", "interview", "hiring", "recruitment", "offer", "position", "career",
+    "สมัครงาน", "สัมภาษณ์", "รับสมัคร", "ตำแหน่ง", "ผลการสมัคร", "นัดหมาย"
+  ];
+  const query = `(${keywords.join(" OR ")}) after:${afterStr}`;
+
   const res = await gmail.users.messages.list({
     userId: "me",
-    maxResults: 200, // Reduced from 500 to keep it snappy, but still substantial
+    q: query,
+    maxResults: 300,
   })
 
   const messages = res.data.messages || []

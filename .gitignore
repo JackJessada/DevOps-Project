@@ -1,4 +1,7 @@
 GEMINI.md
 docs
-.*
+.playwright-mcp
 skills*
+.gemini
+.agents
+.env
