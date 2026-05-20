@@ -28,7 +28,9 @@ jobs:
         run: |
           cd webapp
           npm ci
-
+        env:
+          DATABASE_URL: postgresql://dummy:password@localhost:5432/dummy
+          NEXTAUTH_SECRET: dummy-secret 
       - name: Generate Prisma Client
         run: |
           cd webapp
