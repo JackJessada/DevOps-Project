@@ -28,9 +28,9 @@ services:
       - /app/node_modules # Important: keeps dependencies inside the container
       - /app/.next
     environment:
-      - DATABASE_URL=postgresql://postgres:postgres@db:5432/jobtracker
-      - NEXTAUTH_URL=http://localhost:3000
-      - NEXTAUTH_SECRET=y8p9xR2mK6qL5vW1nJ4bT7zS3hG9fD0c
+      - DATABASE_URL=${DATABASE_URL}
+      - NEXTAUTH_URL=${NEXTAUTH_URL}
+      - NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
       - AI_PROVIDER=${AI_PROVIDER}
       - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
       - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
