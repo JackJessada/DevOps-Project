@@ -14,9 +14,11 @@ export async function POST(request: Request) {
   try {
     let days = 2;
     try {
-      const body = await request.json();
+      const body: { days?: string } = await request.json();
       if (body.days) days = parseInt(body.days);
-    } catch (e) {}
+    } catch {
+      // ignore
+    }
 
     // 1. Fetch recent emails from the specified range
     const searchRange = new Date()
@@ -99,9 +101,17 @@ export async function POST(request: Request) {
 
     const rawUpdates = JSON.parse(jsonMatch[0])
     
+    interface JobUpdate {
+      company: string;
+      position: string;
+      status: "Pending" | "Interviewing" | "Offer" | "Rejected";
+      interviewDate: string | null;
+      notes: string;
+    }
+
     // 4. Consolidate updates by company to prevent duplicate instances in the same batch
-    const consolidatedUpdates: Record<string, any> = {};
-    for (const update of rawUpdates) {
+    const consolidatedUpdates: Record<string, JobUpdate> = {};
+    for (const update of rawUpdates as JobUpdate[]) {
       const key = update.company.toLowerCase().trim();
       if (!consolidatedUpdates[key]) {
         consolidatedUpdates[key] = update;

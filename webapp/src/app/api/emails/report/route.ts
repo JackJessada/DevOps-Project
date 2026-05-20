@@ -11,14 +11,16 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
-  let body = {}
+  let lang = "en"
+  let chatId: string | undefined = undefined
+
   try {
-    body = await request.json()
-  } catch (e) {
+    const body = await request.json() as { lang?: string; chatId?: string }
+    lang = body.lang || "en"
+    chatId = body.chatId
+  } catch {
     // ignore
   }
-  const lang = (body as any).lang || "en"
-  const chatId = (body as any).chatId
 
   // 1. Get emails from the last 2 days (today and yesterday)
   const twoDaysAgo = new Date()
@@ -81,8 +83,8 @@ export async function POST(request: Request) {
       });
       title = title.replace(/['"]/g, '').trim();
 
-    } catch (error) {
-      console.error("AI Report Error:", error)
+    } catch (_error: unknown) {
+      console.error("AI Report Error:", _error)
       return NextResponse.json({ error: "Failed to generate report" }, { status: 500 })
     }
   }
@@ -126,8 +128,8 @@ export async function POST(request: Request) {
     });
 
     return NextResponse.json({ report, chatId: chat.id })
-  } catch (error) {
-    console.error("DB Save Error:", error)
+  } catch (_error: unknown) {
+    console.error("DB Save Error:", _error)
     // Still return the report even if saving fails
     return NextResponse.json({ report, error: "Failed to save history" }, { status: 500 })
   }

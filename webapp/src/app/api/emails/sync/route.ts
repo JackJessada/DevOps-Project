@@ -15,7 +15,9 @@ export async function POST(req: Request) {
     try {
       const body = await req.json();
       if (body.days) days = parseInt(body.days);
-    } catch (e) {}
+    } catch {
+      // ignore
+    }
 
     const count = await fetchAndStoreEmails(session.user.id, days)
     return NextResponse.json({ success: true, count })

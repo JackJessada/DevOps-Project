@@ -3,21 +3,6 @@
 import { signIn } from "next-auth/react";
 import React from "react";
 
-const FeatureCard = ({ title, icon, description }: { title: string; icon: React.ReactNode; description: string }) => (
-  <div className="relative p-6 bg-white rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-all group cursor-default">
-    <div className="flex items-start justify-between mb-4">
-      <div className="p-3 bg-indigo-50 text-indigo-600 rounded-xl group-hover:bg-indigo-600 group-hover:text-white transition-colors">
-        {icon}
-      </div>
-      <span className="px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-indigo-500 bg-indigo-50 rounded-full border border-indigo-100">
-        Coming Soon
-      </span>
-    </div>
-    <h3 className="text-lg font-bold text-slate-900 mb-2">{title}</h3>
-    <p className="text-sm text-slate-500 leading-relaxed">{description}</p>
-  </div>
-);
-
 const LandingPage = () => {
   return (
     <div className="w-full bg-white">
