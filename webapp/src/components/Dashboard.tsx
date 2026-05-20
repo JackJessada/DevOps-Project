@@ -22,7 +22,7 @@ interface ChatSession {
 
 const translations = {
   en: {
-    dashboard: "Dashboard v1.0",
+    dashboard: "Dashboard v3.1",
     signOut: "Sign Out",
     syncGmail: "Sync Gmail",
     syncing: "Syncing...",
@@ -51,10 +51,11 @@ const translations = {
     thai: "Thai",
     english: "English",
     mailChat: "Mail Chat",
-    jobTracker: "Job Tracker"
+    jobTracker: "Job Tracker",
+    syncDays: "{days} days"
   },
   th: {
-    dashboard: "แดชบอร์ด v1.0",
+    dashboard: "แดชบอร์ด v3.1",
     signOut: "ออกจากระบบ",
     syncGmail: "ซิงค์ Gmail",
     syncing: "...",
@@ -83,7 +84,8 @@ const translations = {
     thai: "ไทย",
     english: "อังกฤษ",
     mailChat: "แชทอีเมล",
-    jobTracker: "ติดตามงาน"
+    jobTracker: "ติดตามงาน",
+    syncDays: "{days} วัน"
   }
 };
 
@@ -104,6 +106,7 @@ export default function Dashboard() {
   const [selectedEmail, setSelectedEmail] = useState<Email | null>(null)
   const [uiLang, setUiLang] = useState<"en" | "th">("th")
   const [view, setView] = useState<"mail" | "tracker">("mail")
+  const [syncDays, setSyncDays] = useState(7)
   
   const t = translations[uiLang];
 
@@ -200,11 +203,15 @@ export default function Dashboard() {
     }
   }, [session, loadEmails, loadChatList])
 
-  const handleFetchEmails = async () => {
+  const handleFetchEmails = async (days: number = 7) => {
     setLoading(true)
     setSyncMessage("")
     try {
-      const res = await fetch("/api/emails/sync", { method: "POST" })
+      const res = await fetch("/api/emails/sync", { 
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ days })
+      })
       const data = await res.json()
       if (res.ok) {
         setSyncMessage(t.synced.replace("{count}", data.count.toString()))
@@ -299,7 +306,7 @@ export default function Dashboard() {
             <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white font-bold text-xl shadow-lg shadow-indigo-100">M</div>
             <div className="hidden sm:block">
               <h1 className="text-2xl font-black text-slate-900 tracking-tight">Mail Chat</h1>
-              <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest">Dashboard v1.0</p>
+              <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest">{t.dashboard}</p>
             </div>
           </div>
 
@@ -352,9 +359,28 @@ export default function Dashboard() {
               </div>
               
               <div className="grid grid-cols-1 gap-2">
-                <button onClick={handleFetchEmails} disabled={loading} className="bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-300 text-white py-2 rounded-xl font-bold text-xs transition-all flex items-center justify-center gap-2">
-                  {loading ? t.syncing : t.syncGmail}
-                </button>
+                <div className="flex flex-col gap-2">
+                  <div className="flex bg-white border border-slate-200 rounded-xl overflow-hidden p-0.5">
+                    {[2, 7, 30].map(d => (
+                      <button 
+                        key={d}
+                        onClick={() => setSyncDays(d)}
+                        className={`flex-1 py-1 text-[9px] font-black uppercase tracking-tighter transition-all ${
+                          syncDays === d ? "bg-indigo-600 text-white shadow-sm rounded-lg" : "text-slate-400 hover:text-slate-600"
+                        }`}
+                      >
+                        {t.syncDays.replace("{days}", d.toString())}
+                      </button>
+                    ))}
+                  </div>
+                  <button 
+                    onClick={() => handleFetchEmails(syncDays)} 
+                    disabled={loading} 
+                    className="bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-300 text-white py-2 rounded-xl font-bold text-xs transition-all flex items-center justify-center gap-2"
+                  >
+                    {loading ? t.syncing : t.syncGmail}
+                  </button>
+                </div>
                 <button onClick={generateReport} disabled={chatLoading} className="bg-white border border-slate-200 hover:border-indigo-200 hover:text-indigo-600 text-slate-700 py-2 rounded-xl font-bold text-xs transition-all flex items-center justify-center gap-2">
                   {t.dailyUpdate}
                 </button>
