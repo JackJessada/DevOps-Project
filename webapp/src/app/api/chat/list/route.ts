@@ -11,14 +11,19 @@ export async function GET() {
   }
 
   try {
-    const emails = await prisma.jobEmail.findMany({
+    const chats = await prisma.chat.findMany({
       where: { userId: session.user.id },
-      orderBy: { receivedAt: "desc" },
-      take: 500,
+      orderBy: { updatedAt: "desc" },
+      select: {
+        id: true,
+        title: true,
+        updatedAt: true,
+      }
     })
-    return NextResponse.json({ emails })
-  } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : "Internal Server Error"
-    return NextResponse.json({ error: message }, { status: 500 })
+
+    return NextResponse.json(chats)
+  } catch (error) {
+    console.error("List Chats Error:", error)
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 })
   }
 }

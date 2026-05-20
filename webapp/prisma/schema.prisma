@@ -46,7 +46,41 @@ model User {
   image         String?
   accounts      Account[]
   sessions      Session[]
+  chats         Chat[]
   jobEmails     JobEmail[]
+  jobApplications JobApplication[]
+}
+
+model Chat {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String
+  messages  ChatMessage[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model ChatMessage {
+  id        String   @id @default(cuid())
+  chatId    String
+  chat      Chat     @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  role      String   // "user" or "assistant"
+  content   String   @db.Text
+  createdAt DateTime @default(now())
+}
+
+model JobApplication {
+  id              String   @id @default(cuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  company         String
+  position        String
+  status          String   // "Pending", "Interviewing", "Offer", "Rejected"
+  interviewDate   DateTime?
+  notes           String?  @db.Text
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 }
 
 model VerificationToken {

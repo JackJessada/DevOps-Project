@@ -14,8 +14,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Job Tracker",
-  description: "Track your job applications automatically",
+  title: "Mail Chat",
+  description: "Chat with your Inbox. Master your Career.",
 };
 
 export default function RootLayout({

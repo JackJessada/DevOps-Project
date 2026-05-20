@@ -13,8 +13,9 @@ export async function POST() {
   try {
     const count = await fetchAndStoreEmails(session.user.id)
     return NextResponse.json({ success: true, count })
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Failed to sync emails:", error)
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    const message = error instanceof Error ? error.message : "Internal Server Error"
+    return NextResponse.json({ error: message }, { status: 500 })
   }
 }
