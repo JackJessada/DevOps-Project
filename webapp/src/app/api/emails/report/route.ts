@@ -20,14 +20,15 @@ export async function POST(request: Request) {
   const lang = (body as any).lang || "en"
   const chatId = (body as any).chatId
 
-  // 1. Get today's emails
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
+  // 1. Get emails from the last 2 days (today and yesterday)
+  const twoDaysAgo = new Date()
+  twoDaysAgo.setDate(twoDaysAgo.getDate() - 1)
+  twoDaysAgo.setHours(0, 0, 0, 0)
 
   const emails = await prisma.jobEmail.findMany({
     where: {
       userId: session.user.id,
-      receivedAt: { gte: today },
+      receivedAt: { gte: twoDaysAgo },
     },
     orderBy: { receivedAt: "desc" },
     take: 50,
@@ -40,7 +41,7 @@ export async function POST(request: Request) {
   const dateStr = now.toLocaleString("th-TH", { dateStyle: "full", timeStyle: "medium" });
 
   if (emails.length === 0) {
-    report = lang === "th" ? "ไม่มีอัปเดตใหม่สำหรับวันนี้" : "No new updates for today."
+    report = lang === "th" ? "ไม่มีอัปเดตใหม่สำหรับ 2 วันที่ผ่านมา" : "No new updates for the last 2 days."
     title = lang === "th" ? "ไม่มีอัปเดต" : "No Updates"
   } else {
     const context = emails.map(e => `- ${e.subject} from ${e.from}`).join("\n")
@@ -49,14 +50,14 @@ export async function POST(request: Request) {
       : `You are a helpful assistant providing daily update reports. Today is ${dateStr}`;
 
     const userPrompt = lang === "th"
-      ? `ช่วยสรุปอีเมลเหล่านี้ที่ได้รับในวันนี้ให้เป็น "รายงานประจำวัน" สั้นๆ และให้กำลังใจ
+      ? `ช่วยสรุปอีเมลเหล่านี้ที่ได้รับในช่วง 2 วันที่ผ่านมา (วันนี้และเมื่อวาน) ให้เป็น "รายงานสรุป" สั้นๆ และให้กำลังใจ
          เน้นผู้ส่งที่สำคัญหรือขั้นตอนต่อไปที่ต้องทำหากมีการระบุไว้
          
          ตอบกลับเป็นภาษาไทยเท่านั้น
       
          EMAILS:
          ${context}`
-      : `Summarize these emails received today into a short, encouraging "Daily Report".
+      : `Summarize these emails received in the last 2 days (today and yesterday) into a short, encouraging report.
          Highlight important senders or next steps if mentioned.
          
          Respond in English only.

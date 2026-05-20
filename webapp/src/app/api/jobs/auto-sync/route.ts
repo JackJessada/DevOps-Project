@@ -12,11 +12,18 @@ export async function POST(request: Request) {
   }
 
   try {
-    // 1. Fetch recent emails (last 30)
+    // 1. Fetch recent emails from the last 2 days
+    const twoDaysAgo = new Date()
+    twoDaysAgo.setDate(twoDaysAgo.getDate() - 1)
+    twoDaysAgo.setHours(0, 0, 0, 0)
+
     const emails = await prisma.jobEmail.findMany({
-      where: { userId: session.user.id },
+      where: { 
+        userId: session.user.id,
+        receivedAt: { gte: twoDaysAgo }
+      },
       orderBy: { receivedAt: "desc" },
-      take: 30,
+      take: 50, // Increased to catch more emails over 2 days
     })
 
     if (emails.length === 0) {
